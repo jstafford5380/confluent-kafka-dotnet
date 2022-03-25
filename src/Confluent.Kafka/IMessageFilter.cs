@@ -23,7 +23,7 @@ namespace Confluent.Kafka
     public interface IMessageFilter
     {
         /// <summary>
-        /// Returns whether or not the incoming message should be handled.
+        /// Predicate returns whether or not the incoming message should be handled.
         /// </summary>
         /// <param name="incomingMessageHeaders">The incoming message headers.</param>
         /// <returns></returns>

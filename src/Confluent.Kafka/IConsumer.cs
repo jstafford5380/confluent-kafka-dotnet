@@ -22,99 +22,6 @@ using System.Threading;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a high-level Apache Kafka consumer that supports
-    ///     message filtering using message headers.
-    ///     (with key and value deserialization).
-    /// </summary>    
-    public interface IFilteredConsumer<TKey, TValue> : IConsumer<TKey, TValue>
-    {
-        /// <summary>
-        ///     Poll for new messages / events. Blocks
-        ///     until a consume result is available or the
-        ///     timeout period has elapsed. Applies configured
-        ///     filters.
-        /// </summary>
-        /// <param name="millisecondsTimeout">
-        ///     The maximum period of time (in milliseconds)
-        ///     the call may block.
-        /// </param>
-        /// <returns>
-        ///     The consume result.
-        /// </returns>
-        /// <remarks>
-        ///     The partitions assigned/revoked and offsets
-        ///     committed handlers may be invoked as a
-        ///     side-effect of calling this method (on the
-        ///     same thread).
-        /// </remarks>
-        /// <exception cref="ConsumeException">
-        ///     Thrown
-        ///     when a call to this method is unsuccessful
-        ///     for any reason. Inspect the Error property
-        ///     of the exception for detailed information.
-        /// </exception>
-        ConsumeResult<TKey, TValue> ConsumeFiltered(int millisecondsTimeout);
-
-        /// <summary>
-        ///     Poll for new messages / events. Blocks
-        ///     until a consume result is available or the
-        ///     operation has been cancelled. Applies configured
-        ///     filters.
-        /// </summary>
-        /// <param name="cancellationToken">
-        ///     A cancellation token
-        ///     that can be used to cancel this operation.
-        /// </param>
-        /// <returns>
-        ///     The consume result.
-        /// </returns>
-        /// <remarks>
-        ///     The partitions assigned/revoked and
-        ///     offsets committed handlers may be invoked
-        ///     as a side-effect of calling this method
-        ///     (on the same thread).
-        /// </remarks>
-        /// <exception cref="ConsumeException">
-        ///     Thrown
-        ///     when a call to this method is unsuccessful
-        ///     for any reason (except cancellation by
-        ///     user). Inspect the Error property of the
-        ///     exception for detailed information.
-        /// </exception>
-        /// <exception cref="OperationCanceledException">
-        ///     Thrown on cancellation.
-        /// </exception>
-        ConsumeResult<TKey, TValue> ConsumeFiltered(CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        ///     Poll for new messages / events. Blocks
-        ///     until a consume result is available or the
-        ///     timeout period has elapsed. Applies configured
-        ///     filters.
-        /// </summary>
-        /// <param name="timeout">
-        ///     The maximum period of time
-        ///     the call may block.
-        /// </param>
-        /// <returns>
-        ///     The consume result.
-        /// </returns>
-        /// <remarks>
-        ///     The partitions assigned/revoked and offsets
-        ///     committed handlers may be invoked as a
-        ///     side-effect of calling this method (on the
-        ///     same thread).
-        /// </remarks>
-        /// <exception cref="ConsumeException">
-        ///     Thrown
-        ///     when a call to this method is unsuccessful
-        ///     for any reason. Inspect the Error property
-        ///     of the exception for detailed information.
-        /// </exception>
-        ConsumeResult<TKey, TValue> ConsumeFiltered(TimeSpan timeout);
-    }
-
-    /// <summary>
     ///     Defines a high-level Apache Kafka consumer
     ///     (with key and value deserialization).
     /// </summary>
@@ -201,6 +108,91 @@ namespace Confluent.Kafka
         ///     of the exception for detailed information.
         /// </exception>
         ConsumeResult<TKey, TValue> Consume(TimeSpan timeout);
+
+        /// <summary>
+        ///     Poll for new messages / events. Blocks
+        ///     until a consume result is available or the
+        ///     timeout period has elapsed. Applies configured
+        ///     filters.
+        /// </summary>
+        /// <param name="millisecondsTimeout">
+        ///     The maximum period of time (in milliseconds)
+        ///     the call may block.
+        /// </param>
+        /// <returns>
+        ///     The consume result.
+        /// </returns>
+        /// <remarks>
+        ///     The partitions assigned/revoked and offsets
+        ///     committed handlers may be invoked as a
+        ///     side-effect of calling this method (on the
+        ///     same thread).
+        /// </remarks>
+        /// <exception cref="ConsumeException">
+        ///     Thrown
+        ///     when a call to this method is unsuccessful
+        ///     for any reason. Inspect the Error property
+        ///     of the exception for detailed information.
+        /// </exception>
+        ConsumeResult<TKey, TValue> ConsumeFiltered(int millisecondsTimeout);
+
+        /// <summary>
+        ///     Poll for new messages / events. Blocks
+        ///     until a consume result is available or the
+        ///     operation has been cancelled. Applies configured
+        ///     filters.
+        /// </summary>
+        /// <param name="cancellationToken">
+        ///     A cancellation token
+        ///     that can be used to cancel this operation.
+        /// </param>
+        /// <returns>
+        ///     The consume result.
+        /// </returns>
+        /// <remarks>
+        ///     The partitions assigned/revoked and
+        ///     offsets committed handlers may be invoked
+        ///     as a side-effect of calling this method
+        ///     (on the same thread).
+        /// </remarks>
+        /// <exception cref="ConsumeException">
+        ///     Thrown
+        ///     when a call to this method is unsuccessful
+        ///     for any reason (except cancellation by
+        ///     user). Inspect the Error property of the
+        ///     exception for detailed information.
+        /// </exception>
+        /// <exception cref="OperationCanceledException">
+        ///     Thrown on cancellation.
+        /// </exception>
+        ConsumeResult<TKey, TValue> ConsumeFiltered(CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        ///     Poll for new messages / events. Blocks
+        ///     until a consume result is available or the
+        ///     timeout period has elapsed. Applies configured
+        ///     filters.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time
+        ///     the call may block.
+        /// </param>
+        /// <returns>
+        ///     The consume result.
+        /// </returns>
+        /// <remarks>
+        ///     The partitions assigned/revoked and offsets
+        ///     committed handlers may be invoked as a
+        ///     side-effect of calling this method (on the
+        ///     same thread).
+        /// </remarks>
+        /// <exception cref="ConsumeException">
+        ///     Thrown
+        ///     when a call to this method is unsuccessful
+        ///     for any reason. Inspect the Error property
+        ///     of the exception for detailed information.
+        /// </exception>
+        ConsumeResult<TKey, TValue> ConsumeFiltered(TimeSpan timeout);
 
 
         /// <summary>

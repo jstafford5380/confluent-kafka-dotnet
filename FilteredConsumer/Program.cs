@@ -50,7 +50,7 @@ namespace Confluent.Kafka.Examples.FilteredConsumerExample
             using (var consumer = new ConsumerBuilder<Ignore, string>(config)                
                 .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                 .SetClientSideMessageFilters(new[] { new FromFooFilter() })
-                .Build() as IFilteredConsumer<Ignore, string>)
+                .Build())
             {
                 consumer.Subscribe(topics);
 

@@ -32,7 +32,7 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer with
     ///     deserialization capability.
     /// </summary>
-    internal class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IFilteredConsumer<TKey, TValue>, IClient
+    internal class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IClient
     {
         internal class Config
         {
@@ -855,7 +855,7 @@ namespace Confluent.Kafka
                         kafkaHandle.CreatePossiblyFatalError(msg.err, null));
                 }
 
-                if (useFilter && !this.clientSideMessageFilters.All(filter => filter.ShouldDeserialize(headers)))
+                if (useFilter && this.clientSideMessageFilters.Any(filter => !filter.ShouldDeserialize(headers)))
                     return null;
 
                 TKey key;
@@ -944,7 +944,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(int)" />
         /// </summary>
-        public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout) => Consume(millisecondsTimeout, false);
+        public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout) 
+            => Consume(millisecondsTimeout, false);
 
         /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
@@ -967,7 +968,8 @@ namespace Confluent.Kafka
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => Consume(timeout.TotalMillisecondsAsInt());
 
-        public ConsumeResult<TKey, TValue> ConsumeFiltered(int millisecondsTimeout) => Consume(millisecondsTimeout, true);
+        public ConsumeResult<TKey, TValue> ConsumeFiltered(int millisecondsTimeout) 
+            => Consume(millisecondsTimeout, true);
 
         public ConsumeResult<TKey, TValue> ConsumeFiltered(CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -985,7 +987,8 @@ namespace Confluent.Kafka
             }
         }
 
-        public ConsumeResult<TKey, TValue> ConsumeFiltered(TimeSpan timeout) => Consume(timeout.TotalMillisecondsAsInt());
+        public ConsumeResult<TKey, TValue> ConsumeFiltered(TimeSpan timeout) 
+            => Consume(timeout.TotalMillisecondsAsInt());
 
         /// <inheritdoc/>
         public IConsumerGroupMetadata ConsumerGroupMetadata
