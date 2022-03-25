@@ -32,7 +32,7 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer with
     ///     deserialization capability.
     /// </summary>
-    internal class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IClient
+    internal class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IFilteredConsumer<TKey, TValue>, IClient
     {
         internal class Config
         {
@@ -46,6 +46,7 @@ namespace Confluent.Kafka
             internal Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler;
             internal Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsLostHandler;
             internal bool revokedOrLostHandlerIsFunc;
+            internal List<IMessageFilter> clientSideMessageFilters;
         }
 
         private IDeserializer<TKey> keyDeserializer;
@@ -84,6 +85,8 @@ namespace Confluent.Kafka
         // .NET Exceptions are not propagated through native code, so we need to
         // do this book keeping explicitly.
         private Exception handlerException = null;
+
+        private List<IMessageFilter> clientSideMessageFilters;
 
         private Action<Error> errorHandler;
         private Librdkafka.ErrorDelegate errorCallbackDelegate;
@@ -352,7 +355,6 @@ namespace Confluent.Kafka
             return valAsByteArray;
         }
 
-
         /// <inheritdoc/>
         public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
@@ -619,7 +621,6 @@ namespace Confluent.Kafka
             }
         }
 
-
         internal Consumer(ConsumerBuilder<TKey, TValue> builder)
         {
             var baseConfig = builder.ConstructBaseConfig(this);
@@ -633,6 +634,7 @@ namespace Confluent.Kafka
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
             this.oAuthBearerTokenRefreshHandler = baseConfig.oAuthBearerTokenRefreshHandler;
             this.revokedOrLostHandlerIsFunc = baseConfig.revokedOrLostHandlerIsFunc;
+            this.clientSideMessageFilters = baseConfig.clientSideMessageFilters;
             Librdkafka.Initialize(null);
 
             var config = Confluent.Kafka.Config.ExtractCancellationDelayMaxMs(baseConfig.config, out this.cancellationDelayMaxMs);
@@ -756,13 +758,9 @@ namespace Confluent.Kafka
             {
                 this.valueDeserializer = builder.ValueDeserializer;
             }
-        }
+        }        
 
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(int)" />
-        /// </summary>
-        public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
+        private ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout, bool useFilter)
         {
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
 
@@ -820,7 +818,7 @@ namespace Confluent.Kafka
                     Librdkafka.message_headers(msgPtr, out IntPtr hdrsPtr);
                     if (hdrsPtr != IntPtr.Zero)
                     {
-                        for (var i=0; ; ++i)
+                        for (var i = 0; ; ++i)
                         {
                             var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
                             if (err != ErrorCode.NoError)
@@ -856,6 +854,9 @@ namespace Confluent.Kafka
                         },
                         kafkaHandle.CreatePossiblyFatalError(msg.err, null));
                 }
+
+                if (useFilter && !this.clientSideMessageFilters.All(filter => filter.ShouldDeserialize(headers)))
+                    return null;
 
                 TKey key;
                 try
@@ -921,7 +922,7 @@ namespace Confluent.Kafka
                         ex);
                 }
 
-                return new ConsumeResult<TKey, TValue> 
+                return new ConsumeResult<TKey, TValue>
                 {
                     TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                     Message = new Message<TKey, TValue>
@@ -940,6 +941,10 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(int)" />
+        /// </summary>
+        public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout) => Consume(millisecondsTimeout, false);
 
         /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
@@ -958,11 +963,29 @@ namespace Confluent.Kafka
             }
         }
 
-
         /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => Consume(timeout.TotalMillisecondsAsInt());
 
+        public ConsumeResult<TKey, TValue> ConsumeFiltered(int millisecondsTimeout) => Consume(millisecondsTimeout, true);
+
+        public ConsumeResult<TKey, TValue> ConsumeFiltered(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            while (true)
+            {
+                // Note: An alternative to throwing on cancellation is to return null,
+                // but that would be problematic downstream (require null checks).
+                cancellationToken.ThrowIfCancellationRequested();
+                ConsumeResult<TKey, TValue> result = ConsumeFiltered(cancellationDelayMaxMs);
+                if (result == null)
+                {
+                    continue;
+                }
+                return result;
+            }
+        }
+
+        public ConsumeResult<TKey, TValue> ConsumeFiltered(TimeSpan timeout) => Consume(timeout.TotalMillisecondsAsInt());
 
         /// <inheritdoc/>
         public IConsumerGroupMetadata ConsumerGroupMetadata

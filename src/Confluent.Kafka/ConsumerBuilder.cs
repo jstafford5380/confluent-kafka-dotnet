@@ -62,6 +62,11 @@ namespace Confluent.Kafka
         internal protected IDeserializer<TValue> ValueDeserializer { get; set; }
 
         /// <summary>
+        ///     The configured set of client-side message filters.
+        /// </summary>
+        internal protected IEnumerable<IMessageFilter> ClientSideMessageFilters { get; set; }
+
+        /// <summary>
         ///     The configured partitions assigned handler.
         /// </summary>
         internal protected Func<IConsumer<TKey, TValue>, List<TopicPartition>, IEnumerable<TopicPartitionOffset>> PartitionsAssignedHandler { get; set; }
@@ -116,6 +121,9 @@ namespace Confluent.Kafka
                 partitionsLostHandler = this.PartitionsLostHandler == null
                     ? default(Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>>)
                     : partitions => this.PartitionsLostHandler(consumer, partitions),
+                clientSideMessageFilters = this.ClientSideMessageFilters == null
+                    ? new List<IMessageFilter> { new DefaultMessageFilter() }
+                    : this.ClientSideMessageFilters.ToList(),
                 revokedOrLostHandlerIsFunc = this.RevokedOrLostHandlerIsFunc
             };
         }
@@ -580,6 +588,20 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Offsets committed handler may not be specified more than once.");
             }
             this.OffsetsCommittedHandler = offsetsCommittedHandler;
+            return this;
+        }
+
+        /// <summary>
+        ///     Specify one or more message filters that will cause the consumer to skip 
+        ///     deserialization when all filter criteria are not met.
+        /// </summary>
+        public ConsumerBuilder<TKey, TValue> SetClientSideMessageFilters(IEnumerable<IMessageFilter> filters)
+        {
+            if(this.ClientSideMessageFilters != null)
+            {
+                throw new InvalidOperationException("Client-side message filters may not be specified more than once.");
+            }
+            this.ClientSideMessageFilters = filters;
             return this;
         }
 
