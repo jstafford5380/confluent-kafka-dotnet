@@ -26,7 +26,7 @@ namespace Confluent.Kafka
     ///     message filtering using message headers.
     ///     (with key and value deserialization).
     /// </summary>    
-    public interface IFilteredConsumer<TKey, TValue> : IClient
+    public interface IFilteredConsumer<TKey, TValue> : IConsumer<TKey, TValue>
     {
         /// <summary>
         ///     Poll for new messages / events. Blocks
