@@ -760,7 +760,8 @@ namespace Confluent.Kafka
             }
         }        
 
-        private ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout, bool useFilter)
+        /// <inheritdoc/>
+        public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
 
@@ -855,7 +856,7 @@ namespace Confluent.Kafka
                         kafkaHandle.CreatePossiblyFatalError(msg.err, null));
                 }
 
-                if (useFilter && this.clientSideMessageFilters.Any(filter => !filter.ShouldDeserialize(headers)))
+                if (this.clientSideMessageFilters.Any(filter => !filter.ShouldDeserialize(headers)))
                     return null;
 
                 TKey key;
@@ -941,12 +942,6 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(int)" />
-        /// </summary>
-        public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout) 
-            => Consume(millisecondsTimeout, false);
-
         /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -966,28 +961,6 @@ namespace Confluent.Kafka
 
         /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
-            => Consume(timeout.TotalMillisecondsAsInt());
-
-        public ConsumeResult<TKey, TValue> ConsumeFiltered(int millisecondsTimeout) 
-            => Consume(millisecondsTimeout, true);
-
-        public ConsumeResult<TKey, TValue> ConsumeFiltered(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            while (true)
-            {
-                // Note: An alternative to throwing on cancellation is to return null,
-                // but that would be problematic downstream (require null checks).
-                cancellationToken.ThrowIfCancellationRequested();
-                ConsumeResult<TKey, TValue> result = ConsumeFiltered(cancellationDelayMaxMs);
-                if (result == null)
-                {
-                    continue;
-                }
-                return result;
-            }
-        }
-
-        public ConsumeResult<TKey, TValue> ConsumeFiltered(TimeSpan timeout) 
             => Consume(timeout.TotalMillisecondsAsInt());
 
         /// <inheritdoc/>

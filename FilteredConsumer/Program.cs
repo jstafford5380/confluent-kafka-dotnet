@@ -61,7 +61,7 @@ namespace Confluent.Kafka.Examples.FilteredConsumerExample
                         try
                         {
                             // all messages that make it this far will have met the filter criteria
-                            var consumeResult = consumer.ConsumeFiltered(cancellationToken);
+                            var consumeResult = consumer.Consume(cancellationToken);
                         }
                         catch (ConsumeException e)
                         {
